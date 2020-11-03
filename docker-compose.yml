@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+    unfurler:
+        build: .
+        environment:
+            - GITLAB_TOKEN=${GITLAB_TOKEN}
+            - GITLAB_GRAPHQL_URL=${GITLAB_GRAPHQL_URL}
+            - SLACK_OAUTH_TOKEN=${SLACK_OAUTH_TOKEN}
+        volumes:
+            - ./src:/app/src
+        ports:
+            - 3000:3000
