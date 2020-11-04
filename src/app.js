@@ -1,4 +1,5 @@
 const express = require('express');
+const { isEmpty } = require('lodash');
 const { reduce } = require('async');
 const getDataFromUrl = require('./helpers/extract-data-from-url');
 
@@ -31,18 +32,20 @@ app.post('/unfurl', async (req, res) => {
         let unfurlBlocks;
         if (handler) {
             unfurlBlocks = await handler(projectFullPath, id);
+            unfurlData[link.url] = { blocks: unfurlBlocks };
         }
-        unfurlData[link.url] = { blocks: unfurlBlocks };
+    }
+    if (!isEmpty(unfurlData)) {
+        await bot.chat
+            .unfurl({
+                channel: event.channel,
+                ts: event.message_ts,
+                unfurls: unfurlData,
+            })
+            .catch(console.log);
     }
 
-    await bot.chat
-        .unfurl({
-            channel: event.channel,
-            ts: event.message_ts,
-            unfurls: unfurlData,
-        })
-        .catch(console.log);
-    res.end();
+    res.status(500);
 });
 
 const port = process.env.PORT || 3000;

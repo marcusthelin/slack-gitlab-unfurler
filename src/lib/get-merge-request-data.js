@@ -51,7 +51,6 @@ async function getMergeRequestData(projectFullPath, id) {
         let { title, description, author, milestone, state } = data;
         const assignee = data.assignees.nodes.map(user => user.name)[0] || 'No assignee';
         let stateEmoji;
-        console.log('🤯 🤢 🤮: data', data);
 
         if (!milestone || !milestone.title) {
             milestone = { title: 'No milestone' };
@@ -117,7 +116,6 @@ async function getMergeRequestData(projectFullPath, id) {
             },
         ];
     } catch (error) {
-        console.log('🤯 🤢 🤮: error', error);
         return errorBlock(id);
     }
 }
