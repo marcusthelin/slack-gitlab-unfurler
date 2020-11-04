@@ -27,7 +27,11 @@ app.post('/unfurl', async (req, res) => {
     const unfurlData = {};
 
     for await (const link of links) {
-        const { projectFullPath, type, id } = getDataFromUrl(link.url);
+        const urlData = getDataFromUrl(link.url);
+        if (!urlData) {
+            return;
+        }
+        const { projectFullPath, type, id } = urlData;
         const handler = unfurlHandlers[type];
         let unfurlBlocks;
         if (handler) {

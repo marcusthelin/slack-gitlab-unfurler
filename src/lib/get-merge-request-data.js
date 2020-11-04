@@ -9,7 +9,7 @@ function errorBlock(id) {
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `Something went wrong when fetching information about merge request with ID *${id}*`,
+                text: `Could not unfurl URL 😿`,
             },
         },
     ];
