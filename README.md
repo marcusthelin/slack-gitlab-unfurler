@@ -16,8 +16,8 @@ First of all you'll need to create a Slack bot and install it on a Workspace. Ob
 Make sure to set the **Bot Token Scopes** to `links:read` and `links:write`.
 ![Obtain oAuth token](./assets/images/oauth.png)
 
-Go to Event Subscriptions and enable it, then enter the request URL. The url should be something like: `http(s)://<your-domain>/unfurl`. The important part is the `/unfurl` path. This is where all events and Slack's challenge request ends up. **This set will not work unless server is started. See [Start the server](#Start_the_server)
-![Events](./assets/images/events.png)
+Go to Event Subscriptions and enable it, then enter the request URL. The url should be something like: `http(s)://<your-domain>/unfurl`. The important part is the `/unfurl` path. This is where all events and Slack's challenge request ends up. **This set will not work unless server is started. See [Start the server](#start-the-server)
+![Events](./assets/images/events.png)**
 Scroll down to **Subscribe to events on behalf of users** and add the scope `link_shared`.
 Finally, on the same page, under **App unfurl domains** add the domains the events should happen on. E.g `gitlab.com`.
 
