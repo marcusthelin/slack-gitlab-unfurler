@@ -8,7 +8,7 @@ const bot = require('./helpers/bot');
 const app = express();
 
 const unfurlHandlers = {
-    merge_requests: require('./lib/get-merge-request-data'),
+    merge_requests: require('./handlers/merge-requests'),
 };
 
 app.use(express.json());
