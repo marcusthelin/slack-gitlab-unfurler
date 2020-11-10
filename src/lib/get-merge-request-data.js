@@ -2,18 +2,7 @@ const gql = require('graphql-tag');
 const { capitalize } = require('lodash');
 const query = require('../helpers/query');
 const truncate = require('../helpers/truncate');
-
-function errorBlock(id) {
-    return [
-        {
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: `Could not unfurl URL 😿`,
-            },
-        },
-    ];
-}
+const errorBlock = require('../helpers/error-block');
 
 async function getMergeRequestData(projectFullPath, id) {
     const mrQuery = `
