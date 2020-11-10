@@ -24,6 +24,8 @@ async function getMergeRequestData(projectFullPath, id) {
                 mergeRequest(iid: "${id}") {
                     state
                     title
+                    createdAt
+                    mergedAt
                     description
                     assignees {
                         nodes {
@@ -48,7 +50,8 @@ async function getMergeRequestData(projectFullPath, id) {
             return errorBlock(id);
         }
 
-        let { title, description, author, milestone, state } = data;
+        let { title, description, author, milestone, state, createdAt, mergedAt } = data;
+        let jiraLinks = [];
         const assignee = data.assignees.nodes.map(user => user.name)[0] || 'No assignee';
         let stateEmoji;
 
@@ -57,6 +60,13 @@ async function getMergeRequestData(projectFullPath, id) {
         }
 
         if (description) {
+            const regex = /http(s)?:\/{0,2}([a-zA-Z0-9-_]*)\.atlassian\.\w+\/browse\/(?<issue>[A-Za-z0-9-_]+)/g;
+            description.split(/\s+/g).forEach(word => {
+                const match = regex.exec(word);
+                if (match) {
+                    jiraLinks.push({ url: match[0], issue: match.groups.issue });
+                }
+            });
             description = truncate(description, 200).replace(/#/g, '');
         } else {
             description = 'No description';
@@ -69,8 +79,7 @@ async function getMergeRequestData(projectFullPath, id) {
         } else {
             stateEmoji = '🛑';
         }
-
-        return [
+        const fields = [
             {
                 type: 'header',
                 text: {
@@ -104,9 +113,12 @@ async function getMergeRequestData(projectFullPath, id) {
                         type: 'mrkdwn',
                         text: `*Milestone:*\n${milestone.title}`,
                     },
+                    // Status. If merged also display date of merge.
                     {
                         type: 'mrkdwn',
-                        text: `*Status:*\n${capitalize(state)} ${stateEmoji}`,
+                        text: `*Status:*\n${capitalize(state)} ${stateEmoji} ${
+                            mergedAt ? `_(${new Date(mergedAt).toLocaleDateString('sv-se')})_` : ''
+                        }`,
                     },
                     {
                         type: 'mrkdwn',
@@ -115,6 +127,29 @@ async function getMergeRequestData(projectFullPath, id) {
                 ],
             },
         ];
+        if (jiraLinks.length) {
+            // Render jira links
+            const linksMarkdown = jiraLinks.map(link => `<${link.url}|${link.issue}>`).join('\n');
+            fields.push({
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `*Jira issues:*\n${linksMarkdown}`,
+                },
+            });
+        }
+        // Render a context displaying merge request creation date
+        fields.push({
+            type: 'context',
+            elements: [
+                {
+                    type: 'plain_text',
+                    text: `Created ${new Date(createdAt).toLocaleDateString('sv-se')}`,
+                    emoji: true,
+                },
+            ],
+        });
+        return fields;
     } catch (error) {
         return errorBlock(id);
     }
