@@ -38,7 +38,7 @@ function getStatusValue(status) {
 async function pipelineHandler(projectFullPath, id, rest) {
     try {
         const url = `/projects/${encodeURIComponent(projectFullPath)}/pipelines/${id}`;
-        const res = await restClient.get(url).catch(console.log);
+        const res = await restClient.get(url);
         const { status, ref, id: pipelineId, web_url, user } = res.data;
         const { text: statusText, emoji: statusEmoji } = getStatusValue(status);
         return [
@@ -73,7 +73,6 @@ async function pipelineHandler(projectFullPath, id, rest) {
             },
         ];
     } catch (error) {
-        console.log(error);
         return errorBlock(id);
     }
 }
