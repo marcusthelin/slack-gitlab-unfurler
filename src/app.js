@@ -9,6 +9,7 @@ const app = express();
 
 const unfurlHandlers = {
     merge_requests: require('./handlers/merge-requests'),
+    pipelines: require('./handlers/pipelines'),
 };
 
 app.use(express.json());
@@ -31,11 +32,11 @@ app.post('/unfurl', async (req, res) => {
         if (!urlData) {
             return;
         }
-        const { projectFullPath, type, id } = urlData;
+        const { projectFullPath, type, id, rest } = urlData;
         const handler = unfurlHandlers[type];
         let unfurlBlocks;
         if (handler) {
-            unfurlBlocks = await handler(projectFullPath, id);
+            unfurlBlocks = await handler(projectFullPath, id, rest);
             unfurlData[link.url] = { blocks: unfurlBlocks };
         }
     }
