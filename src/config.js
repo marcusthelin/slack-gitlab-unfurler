@@ -7,5 +7,5 @@ function getOrError(name) {
 }
 
 exports.GITLAB_TOKEN = getOrError('GITLAB_TOKEN');
-exports.GITLAB_GRAPHQL_URL = getOrError('GITLAB_GRAPHQL_URL');
+exports.GITLAB_URL = getOrError('GITLAB_URL');
 exports.SLACK_OAUTH_TOKEN = getOrError('SLACK_OAUTH_TOKEN');
