@@ -1,7 +1,7 @@
 const gql = require('graphql-tag');
 const { capitalize } = require('lodash');
 const query = require('../helpers/query');
-const truncate = require('../helpers/truncate');
+// const truncate = require('../helpers/truncate');
 const errorBlock = require('../helpers/error-block');
 
 async function getMergeRequestData(projectFullPath, id) {
@@ -12,6 +12,11 @@ async function getMergeRequestData(projectFullPath, id) {
                 name
                 mergeRequest(iid: "${id}") {
                     state
+                    headPipeline {
+                        detailedStatus {
+                            text
+                        }
+                    }
                     title
                     createdAt
                     mergedAt
@@ -39,7 +44,16 @@ async function getMergeRequestData(projectFullPath, id) {
             return errorBlock(id);
         }
 
-        let { title, description, author, milestone, state, createdAt, mergedAt } = data;
+        let {
+            title,
+            description,
+            author,
+            milestone,
+            state,
+            createdAt,
+            mergedAt,
+            headPipeline,
+        } = data;
         let jiraLinks = [];
         const assignee = data.assignees.nodes.map(user => user.name)[0] || 'No assignee';
         let stateEmoji;
@@ -56,7 +70,7 @@ async function getMergeRequestData(projectFullPath, id) {
                     jiraLinks.push({ url: match[0], issue: match.groups.issue });
                 }
             });
-            description = truncate(description, 200).replace(/#/g, '');
+            description = description.replace(/#/g, '');
         } else {
             description = 'No description';
         }
@@ -116,15 +130,20 @@ async function getMergeRequestData(projectFullPath, id) {
                 ],
             },
         ];
+
+        if (headPipeline && headPipeline.detailedStatus) {
+            fields[2].fields.push({
+                type: 'mrkdwn',
+                text: `*Pipeline:*\n${capitalize(headPipeline.detailedStatus.text)}`,
+            });
+        }
+
         if (jiraLinks.length) {
             // Render jira links
             const linksMarkdown = jiraLinks.map(link => `<${link.url}|${link.issue}>`).join('\n');
-            fields.push({
-                type: 'section',
-                text: {
-                    type: 'mrkdwn',
-                    text: `*Jira issues:*\n${linksMarkdown}`,
-                },
+            fields[2].fields.push({
+                type: 'mrkdwn',
+                text: `*Jira issues:*\n${linksMarkdown}`,
             });
         }
         // Render a context displaying merge request creation date
@@ -140,6 +159,7 @@ async function getMergeRequestData(projectFullPath, id) {
         });
         return fields;
     } catch (error) {
+        console.log('🤯 🤢 🤮: error', error);
         return errorBlock(id);
     }
 }
