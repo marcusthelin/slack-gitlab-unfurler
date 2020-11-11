@@ -64,3 +64,7 @@ Can show the following if information exists:
 - Branch
 
 ![Pipeline status](assets/images/pipeline.png)
+
+# Changelog
+## 2.x.x 
+Breaking changes! GITLAB_GRAPHQL_URL environment variable has been replaced with GITLAB_URL. You will now only need to pass the url to your Gitlab instance.
