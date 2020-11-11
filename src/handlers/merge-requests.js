@@ -1,19 +1,8 @@
 const gql = require('graphql-tag');
 const { capitalize } = require('lodash');
 const query = require('../helpers/query');
-const truncate = require('../helpers/truncate');
-
-function errorBlock(id) {
-    return [
-        {
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: `Could not unfurl URL 😿`,
-            },
-        },
-    ];
-}
+// const truncate = require('../helpers/truncate');
+const errorBlock = require('../helpers/error-block');
 
 async function getMergeRequestData(projectFullPath, id) {
     const mrQuery = `
@@ -23,7 +12,14 @@ async function getMergeRequestData(projectFullPath, id) {
                 name
                 mergeRequest(iid: "${id}") {
                     state
+                    headPipeline {
+                        detailedStatus {
+                            text
+                        }
+                    }
                     title
+                    createdAt
+                    mergedAt
                     description
                     assignees {
                         nodes {
@@ -48,7 +44,17 @@ async function getMergeRequestData(projectFullPath, id) {
             return errorBlock(id);
         }
 
-        let { title, description, author, milestone, state } = data;
+        let {
+            title,
+            description,
+            author,
+            milestone,
+            state,
+            createdAt,
+            mergedAt,
+            headPipeline,
+        } = data;
+        let jiraLinks = [];
         const assignee = data.assignees.nodes.map(user => user.name)[0] || 'No assignee';
         let stateEmoji;
 
@@ -57,7 +63,14 @@ async function getMergeRequestData(projectFullPath, id) {
         }
 
         if (description) {
-            description = truncate(description, 200).replace(/#/g, '');
+            const regex = /http(s)?:\/{0,2}([a-zA-Z0-9-_]*)\.atlassian\.\w+\/browse\/(?<issue>[A-Za-z0-9-_]+)/g;
+            description.split(/\s+/g).forEach(word => {
+                const match = regex.exec(word);
+                if (match) {
+                    jiraLinks.push({ url: match[0], issue: match.groups.issue });
+                }
+            });
+            description = description.replace(/#/g, '');
         } else {
             description = 'No description';
         }
@@ -69,8 +82,7 @@ async function getMergeRequestData(projectFullPath, id) {
         } else {
             stateEmoji = '🛑';
         }
-
-        return [
+        const fields = [
             {
                 type: 'header',
                 text: {
@@ -104,9 +116,12 @@ async function getMergeRequestData(projectFullPath, id) {
                         type: 'mrkdwn',
                         text: `*Milestone:*\n${milestone.title}`,
                     },
+                    // Status. If merged also display date of merge.
                     {
                         type: 'mrkdwn',
-                        text: `*Status:*\n${capitalize(state)} ${stateEmoji}`,
+                        text: `*Status:*\n${capitalize(state)} ${stateEmoji} ${
+                            mergedAt ? `_(${new Date(mergedAt).toLocaleDateString('sv-se')})_` : ''
+                        }`,
                     },
                     {
                         type: 'mrkdwn',
@@ -115,7 +130,36 @@ async function getMergeRequestData(projectFullPath, id) {
                 ],
             },
         ];
+
+        if (headPipeline && headPipeline.detailedStatus) {
+            fields[2].fields.push({
+                type: 'mrkdwn',
+                text: `*Pipeline:*\n${capitalize(headPipeline.detailedStatus.text)}`,
+            });
+        }
+
+        if (jiraLinks.length) {
+            // Render jira links
+            const linksMarkdown = jiraLinks.map(link => `<${link.url}|${link.issue}>`).join('\n');
+            fields[2].fields.push({
+                type: 'mrkdwn',
+                text: `*Jira issues:*\n${linksMarkdown}`,
+            });
+        }
+        // Render a context displaying merge request creation date
+        fields.push({
+            type: 'context',
+            elements: [
+                {
+                    type: 'plain_text',
+                    text: `Created ${new Date(createdAt).toLocaleDateString('sv-se')}`,
+                    emoji: true,
+                },
+            ],
+        });
+        return fields;
     } catch (error) {
+        console.log('🤯 🤢 🤮: error', error);
         return errorBlock(id);
     }
 }

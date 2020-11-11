@@ -1,13 +1,17 @@
 function extractDataFromUrl(url) {
     const { pathname } = new URL(url);
-    const regex = /\/(\w+.+)\/-\/(\w+)\/(.*)/;
-
+    const regex = /\/(?<fullPath>\w+.+)\/-\/(?<type>\w+)\/(?<id>\d*)\/*(?<rest>.*)/;
+    
     try {
-        const [_, projectPath, type, id] = regex.exec(pathname);
+        const { groups } = regex.exec(pathname);
+        if (!groups) {
+            return null;
+        }
         return {
-            projectFullPath: projectPath,
-            type,
-            id,
+            projectFullPath: groups.fullPath,
+            type: groups.type,
+            id: groups.id,
+            rest: groups.rest,
         };
     } catch (error) {
         return null;

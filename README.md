@@ -24,7 +24,7 @@ Finally, on the same page, under **App unfurl domains** add the domains the even
 ## Environment variables
 ```shell
 GITLAB_TOKEN
-GITLAB_GRAPHQL_URL - E.g https://gitlab.com/api/graphql
+GITLAB_URL - Full url to your Gitlab instance. E.g https://gitlab.com
 SLACK_OAUTH_TOKEN
 PORT - What port the server should run on.
 ```
@@ -34,11 +34,37 @@ The server can be most easily started by running the Docker image.
 ```shell
 docker run -d -p 5000:5000 \
 -e GITLAB_TOKEN=<your token> \
--e GITLAB_GRAPHQL_URL=<url to your gitlab graphql endpoint>
+-e GITLAB_URL=<url to your gitlab instance>
 -e SLACK_OAUTH_TOKEN=<slack bot oauth token> \
 -e PORT=5000 \
 marcusthelin/slack-gitlab-unfurler:latest
 ```
 
 # Supported unfurls
-Right now only merge request unfurling is supported, but this is an open source project so feel free to fork the repo and add other unfurls yourself.
+## Merge request information. 
+
+Can show the following if information exists:
+- Title
+- Description
+- Author
+- Milestone
+- Merge status
+- Assignee
+- Pipeline status
+- Jira issues found in description text 
+
+![Merge request](assets/images/merge_request.png)
+
+## Pipeline information. 
+
+Can show the following if information exists:
+- ID with a link to the pipeline
+- Status
+- User that started the pipeline
+- Branch
+
+![Pipeline status](assets/images/pipeline.png)
+
+# Changelog
+## 2.x.x 
+Breaking changes! GITLAB_GRAPHQL_URL environment variable has been replaced with GITLAB_URL. You will now only need to pass the url to your Gitlab instance.
