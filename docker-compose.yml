@@ -5,7 +5,7 @@ services:
         build: .
         environment:
             - GITLAB_TOKEN=${GITLAB_TOKEN}
-            - GITLAB_GRAPHQL_URL=${GITLAB_GRAPHQL_URL}
+            - GITLAB_URL=${GITLAB_URL}
             - SLACK_OAUTH_TOKEN=${SLACK_OAUTH_TOKEN}
             - PORT=${PORT:-3000}
         volumes:
