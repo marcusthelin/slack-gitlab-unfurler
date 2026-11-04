@@ -1,6 +1,5 @@
 const express = require('express');
 const { isEmpty } = require('lodash');
-const { reduce } = require('async');
 const getDataFromUrl = require('./helpers/extract-data-from-url');
 
 const bot = require('./helpers/bot');
@@ -23,20 +22,35 @@ app.post('/unfurl', async (req, res) => {
         return res.send(req.body.challenge);
     }
 
-    const { links = [] } = req.body.event;
+    /**
+     * Slack expects an HTTP 200 within 3 seconds and retries the event (up to
+     * 3 times) otherwise; apps that keep failing to respond get their event
+     * subscription disabled. Acknowledge right away, then do the GitLab and
+     * Slack work after the response has been sent.
+     */
+    res.sendStatus(200);
+
+    if (req.get('x-slack-retry-num')) {
+        // A retry of an event we already acknowledged (our ack was slow). The
+        // original delivery is still being processed; don't unfurl it twice.
+        return;
+    }
+
     const { event } = req.body;
+    if (!event || !Array.isArray(event.links)) {
+        return;
+    }
     const unfurlData = {};
 
-    for await (const link of links) {
+    for (const link of event.links) {
         const urlData = getDataFromUrl(link.url);
         if (!urlData) {
-            return;
+            continue;
         }
         const { projectFullPath, type, id, rest } = urlData;
         const handler = unfurlHandlers[type];
-        let unfurlBlocks;
         if (handler) {
-            unfurlBlocks = await handler(projectFullPath, id, rest);
+            const unfurlBlocks = await handler(projectFullPath, id, rest);
             unfurlData[link.url] = { blocks: unfurlBlocks };
         }
     }
@@ -47,10 +61,9 @@ app.post('/unfurl', async (req, res) => {
                 ts: event.message_ts,
                 unfurls: unfurlData,
             })
+            .then(() => console.log(`unfurled ${Object.keys(unfurlData).join(', ')}`))
             .catch(console.log);
     }
-
-    res.status(500);
 });
 
 const port = process.env.PORT || 3000;
